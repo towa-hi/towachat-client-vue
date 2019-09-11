@@ -1,21 +1,9 @@
 
-  const SocketIO = require('socket.io-client');
-  const socket = SocketIO('http://localhost:5000/');
-  const request = require('request');
-  const store = require('./store');
   const Validator = require('validator');
   const config = require('../config/main');
-  socket.emit('room','room1');
-
-  socket.on('userConnected', (room) => {
-    console.log(room);
-  });
 
   export default {
     name: 'app',
-    components: {
-
-    },
     data: () => {
       return {
         loginInput: {
@@ -50,7 +38,13 @@
     },
     computed: {
       self() {
-        return this.$store.state.self;
+        return this.$store.getters.getSelf;
+      },
+      connected() {
+        return this.$store.state.connected;
+      },
+      authenticated() {
+        return this.$store.state.authenticated;
       },
       localStorageToken() {
         return localStorage.token;
@@ -90,7 +84,7 @@
         if (Validator.isLength(handle, config.MIN_HANDLE_LENGTH, config.MAX_HANDLE_LENGTH)) {
           return true;
         }
-        console.log('App.js validateHandle() msut be between ' + config.MIN_HANDLE_LENGTH + ' and ' + config.MAX_HANDLE_LENGTH + ' long.')
+        console.log('App.js validateHandle() must be between ' + config.MIN_HANDLE_LENGTH + ' and ' + config.MAX_HANDLE_LENGTH + ' long.')
         return false;
       },
       validateChannelName(channelName) {
@@ -164,14 +158,14 @@
         this.$store.dispatch('prune');
       }
     },
-    mounted() {
-      console.log('App.js.mounted()');
-      if (localStorage.token) {
-        console.log('App.js.mounted(): token detected:', localStorage.token);
-        this.$store.dispatch('verify', localStorage.token);
-      } else {
-        console.log('App.js.mounted(): No token in localStorage.')
-      }
-      this.getChannels();
+    created() {
+      console.log('App.js.created()');
+      // if (localStorage.token) {
+      //   console.log('App.js.mounted(): token detected:', localStorage.token);
+      //   this.$store.dispatch('verify', localStorage.token);
+      // } else {
+      //   console.log('App.js.mounted(): No token in localStorage.')
+      // }
+      // this.getChannels();
     },
   }

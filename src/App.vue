@@ -1,24 +1,7 @@
 <template>
-  <div id="app">
-    <h1>user logged in: {{self.username}}</h1>
-    <ul>
-      <li>id: {{self._id}}</li>
-      <li>username: {{self.username}}</li>
-      <li>avatar: {{self.avatar}}</li>
-      <li>handle: {{self.handle}}</li>
-      <li>token: {{localStorageToken}}</li>
-      <ul id="userChannelList">
-        <li v-for="channel in self.channels">
-          <ul id="channelInfo">
-            <li>name: {{channel.name}}</li>
-            <li>description: {{channel.description}}</li>
-            <li>avatar: {{channel.avatar}}</li>
-            <li>id: {{channel._id}}</li>
-            <li><button type="button" v-on:click="leaveChannel(channel._id)">leave channel</button></li>
-          </ul>
-        </li>
-      </ul>
-    </ul>
+  <div id="app" v-if="$store.state.connected">
+    <h1 v-if="$store.state.authenticated"> user logged in: {{$store.getters.getSelf.username}}</h1>
+    <user-card v-if="$store.state.authenticated" :userId="$store.state.self"/>
     <div id="login">
       <input type="username" name="username" v-model="loginInput.username" placeholder="Username" />
       <input type="password" name="password" v-model="loginInput.password" placeholder="Password" />
@@ -56,13 +39,7 @@
     <button type="button" v-on:click="getChannels()">get channels</button>
     <ul id="channelList">
       <li v-for="channel in channelList">
-        <ul id="channelInfo">
-          <li>name: {{channel.name}}</li>
-          <li>description: {{channel.description}}</li>
-          <li>avatar: {{channel.avatar}}</li>
-          <li>id: {{channel._id}}</li>
-          <li><button type="button" v-on:click="joinChannel(channel._id)">join channel</button></li>
-        </ul>
+        <!-- <channel-card v-bind:channel="channel._id"/> -->
       </li>
     </ul>
   </div>
