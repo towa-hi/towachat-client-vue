@@ -1,5 +1,5 @@
 <template>
-  <div class="channel-card">
+  <div class="channel-card" v-if="$store.state.channels[this.channelId]">
     <ul>
       <li>id: {{channel._id}}</li>
       <li>name: {{channel.name}}</li>
@@ -20,20 +20,20 @@
 export default {
   name: 'channel-card',
   props: {
-    channelId: String,
-  },
-  data: () => {
-    return {
-      channel: {}
-    };
-  },
-  methods: {
-    getMembers() {
-      return $store.dispatch(channel.members);
+    channelId: {
+      required: true,
+      type: String
     }
   },
-  mounted() {
-
+  computed: {
+    channel() {
+      //this returns unresolved cuz it hasnt requested the channelid first
+      //gotta figure out how to fix this part
+      return this.$store.state.channels[this.channelId];
+    }
+  },
+  created() {
+    this.$store.dispatch('requestChannel', this.channelId);
   }
 }
 </script>

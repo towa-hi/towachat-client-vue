@@ -9,95 +9,140 @@ export default new Vuex.Store({
   state: {
     self: null,
     users: {},
-    channels: [],
+    channels: {},
     connected: false,
     authenticated: false,
-    benis: false,
+    benis: "5d6b54b10adb60228c949bb7"
   },
   getters: {
     getSelf(state) {
       return state.users[state.self];
+    },
+    getChannel(state, channelId) {
+      return state.channels[channelId];
+    },
+    getUser(state, userId) {
+
+      return state.users[userId];
     }
   },
   mutations: {
     connected(state, isConnected) {
       state.connected = isConnected;
-      console.log('store.js connected');
+      console.log('mutation connected');
     },
     authenticated(state, isAuthenticated) {
       state.authenticated = isAuthenticated;
-      console.log('store.js authenticated')
+      console.log('mutation authenticated')
     },
     setSelf(state, userId) {
       state.self = userId;
-      console.log('store.js setSelf');
+      console.log('mutation setSelf');
     },
-
     setChannels(state, channels) {
       state.channels = channels;
-      console.log('store.js setChannels(): channels saved');
+      console.log('mutation setChannels');
     },
     addChannel(state, channel) {
-      state.channels[channel._id] = channel;
-      console.log('store.js addChannels(): channel added');
+      Vue.set(state.channels, channel._id, channel);
+      // state.channels[channel._id] = channel;
+      console.log('mutation addChannel');
     },
     setUsers(state, users) {
       state.users = users;
-      console.log('store.js setUsers(): users saved');
+      console.log('mutation setUsers');
     },
     addUser(state, user) {
-      state.users[user._id] = user;
-      console.log('store.js addUser(): user added');
+      Vue.set(state.users, user._id, user);
+      // state.users[user._id] = user;
+      console.log('mutation addUser');
     }
   },
   actions: {
-    SOCKET_wewlad({commit, dispatch}, data) {
-      console.log(data);
-    },
     SOCKET_connect({commit, dispatch}) {
-      console.log('socket connected');
       commit('connected', true);
+      console.log('socket.emit authenticate')
       this._vm.$socket.emit('authenticate', {token: localStorage.token});
     },
-    SOCKET_newUser({commit, dispatch}, user) {
-      console.log('socket newuser');
+    SOCKET_addUser({commit, dispatch}, user) {
       commit('addUser', user);
+      // for (var key in user.channels) {
+      //   var channelId = user.channels[key];
+      //   console.log('socket emit getChannel');
+      //   this._vm.$socket.emit('getChannel', user.channels[key]);
+      // }
     },
-    SOCKET_newSelf({commit, dispatch}, selfId) {
-      console.log('socket newSelf');
+    SOCKET_addChannel({commit, dispatch}, channel) {
+      commit('addChannel', channel);
+    },
+    SOCKET_addSelf({commit, dispatch}, selfId) {
       commit('authenticated', true);
       commit('setSelf', selfId);
     },
     SOCKET_newToken({commit, dispatch}, token) {
-      console.log('socket newToken');
       localStorage.setItem('token', token);
     },
-    connected({commit, dispatch}, isConnected) {
-      commit('connected', isConnected);
+    SOCKET_unauthorized({commit, dispatch}) {
+      console.log('unauthorized');
+      dispatch('logout');
     },
-    authenticated({commit, dispatch}, self) {
-      commit('authenticated', true);
-      //commit('setSelf')
+    login({commit, dispatch}, {username, password}) {
+      console.log('store.js login')
+      console.log('socket.emit login');
+      this._vm.$socket.emit('login', {username: username, password: password});
     },
-    setSelf({commit, dispatch}, selfId) {
-      commit('setSelf', selfId)
+    logout({commit, dispatch}) {
+      console.log('store.js logout');
+      commit('authenticated', false);
+      commit('setSelf', null);
     },
-    getUser({commit, dispatch}, userId) {
-      console.log('got skt_getuser');
-      commit('addUser', userId);
-      // socket.emit('getUser', userId);
-      return state.users[userId];
+    requestUser({commit, dispatch}, userId) {
+      console.log('store.js requestUser');
+      console.log('socket.emit getUser');
+      this._vm.$socket.emit('getUser', userId, (response) => {
+        commit('addUser', response);
+      });
     },
-    getChannel({commit, dispatch}, channelId) {
-      console.log('got skt_getchannel');
-      commit('addChannel', channelId);
-      // socket.emit('getChannel', channelId);
-      return state.channels[channelId];
-    },
-    newToken(newToken) {
-      console.log('received a new token from serber');
-      localStorage.setItem('token', newToken);
-    },
+    requestChannel({commit, dispatch}, channelId) {
+      console.log('store.js requestChannel');
+      console.log('socket.emit getChannel');
+      this._vm.$socket.emit('getChannel', channelId, (response) => {
+        commit('addChannel', response);
+      });
+    }
+
+
+
+
+
+
+    //
+    // connected({commit, dispatch}, isConnected) {
+    //   commit('connected', isConnected);
+    // },
+    // authenticated({commit, dispatch}, self) {
+    //   commit('authenticated', true);
+    //   //commit('setSelf')
+    // },
+    // setSelf({commit, dispatch}, selfId) {
+    //   commit('setSelf', selfId)
+    // },
+    // getUser({commit, dispatch}, userId) {
+    //   console.log('got skt_getuser');
+    //   commit('addUser', userId);
+    //   // socket.emit('getUser', userId);
+    //   return state.users[userId];
+    // },
+    // getChannel({commit, dispatch}, channelId) {
+    //   console.log('got skt_getchannel');
+    //   commit('addChannel', channelId);
+    //   // socket.emit('getChannel', channelId);
+    //   return state.channels[channelId];
+    // },
+    // newToken(newToken) {
+    //   console.log('received a new token from serber');
+    //   localStorage.setItem('token', newToken);
+    // },
     // getChannelsById({commit, dispatch}, channelIdList) {
     //   var getChannelsJSON = {
     //     "channels": channelIdList
@@ -115,38 +160,38 @@ export default new Vuex.Store({
     // },
     //
     //
-    login({commit, dispatch}, {username, password}) {
-      dispatch('logout');
-      console.log('store.js login()');
-      var loginReqJSON = {
-        "username": username,
-        "password": password
-      }
-      request(
-        {
-          method: 'POST',
-          url: 'http://localhost:5000/api/users/login',
-          json: loginReqJSON,
-        },
-        (err, httpResponse, body) => {
-          if (body._id) {
-            console.log('id:', body._id);
-            console.log('body found');
-            commit('setSelf', body);
-          } else {
-            console.log('error');
-            commit('setSelf', {});
-          }
-        }
-      );
-      dispatch('prune');
-    },
-    logout({commit, dispatch}) {
-      console.log('store.js logout()');
-      commit('setSelf', {});
-      localStorage.removeItem('token');
-      console.log('store.js logout() token wiped')
-    },
+    // login({commit, dispatch}, {username, password}) {
+    //   dispatch('logout');
+    //   console.log('store.js login()');
+    //   var loginReqJSON = {
+    //     "username": username,
+    //     "password": password
+    //   }
+    //   request(
+    //     {
+    //       method: 'POST',
+    //       url: 'http://localhost:5000/api/users/login',
+    //       json: loginReqJSON,
+    //     },
+    //     (err, httpResponse, body) => {
+    //       if (body._id) {
+    //         console.log('id:', body._id);
+    //         console.log('body found');
+    //         commit('setSelf', body);
+    //       } else {
+    //         console.log('error');
+    //         commit('setSelf', {});
+    //       }
+    //     }
+    //   );
+    //   dispatch('prune');
+    // },
+    // logout({commit, dispatch}) {
+    //   console.log('store.js logout()');
+    //   commit('setSelf', {});
+    //   localStorage.removeItem('token');
+    //   console.log('store.js logout() token wiped')
+    // },
     // verify({commit, dispatch}) {
     //   console.log('store.js verify()');
     //   console.time('verify request');

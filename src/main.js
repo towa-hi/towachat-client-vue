@@ -18,9 +18,7 @@ Vue.use(new VueSocketIO({
 Vue.component('user-card', UserCard);
 Vue.component('channel-card', ChannelCard);
 Vue.config.productionTip = false;
-//socketStruct.initSocket(socket);
-console.log(socket);
-console.log(socket.listeners());
+
 new Vue({
   store: store,
   sockets: {
