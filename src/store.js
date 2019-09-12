@@ -51,6 +51,27 @@ export default new Vuex.Store({
     }
   },
   actions: {
+    SOCKET_wewlad({commit, dispatch}, data) {
+      console.log(data);
+    },
+    SOCKET_connect({commit, dispatch}) {
+      console.log('socket connected');
+      commit('connected', true);
+      this._vm.$socket.emit('authenticate', {token: localStorage.token});
+    },
+    SOCKET_newUser({commit, dispatch}, user) {
+      console.log('socket newuser');
+      commit('addUser', user);
+    },
+    SOCKET_newSelf({commit, dispatch}, selfId) {
+      console.log('socket newSelf');
+      commit('authenticated', true);
+      commit('setSelf', selfId);
+    },
+    SOCKET_newToken({commit, dispatch}, token) {
+      console.log('socket newToken');
+      localStorage.setItem('token', token);
+    },
     connected({commit, dispatch}, isConnected) {
       commit('connected', isConnected);
     },
@@ -61,19 +82,19 @@ export default new Vuex.Store({
     setSelf({commit, dispatch}, selfId) {
       commit('setSelf', selfId)
     },
-    SKT_getUser({commit, dispatch}, userId) {
+    getUser({commit, dispatch}, userId) {
       console.log('got skt_getuser');
       commit('addUser', userId);
       // socket.emit('getUser', userId);
       return state.users[userId];
     },
-    SKT_getChannel({commit, dispatch}, channelId) {
+    getChannel({commit, dispatch}, channelId) {
       console.log('got skt_getchannel');
       commit('addChannel', channelId);
       // socket.emit('getChannel', channelId);
       return state.channels[channelId];
     },
-    SKT_newToken(newToken) {
+    newToken(newToken) {
       console.log('received a new token from serber');
       localStorage.setItem('token', newToken);
     },
@@ -94,32 +115,32 @@ export default new Vuex.Store({
     // },
     //
     //
-    // login({commit, dispatch}, {username, password}) {
-    //   dispatch('logout');
-    //   console.log('store.js login()');
-    //   var loginReqJSON = {
-    //     "username": username,
-    //     "password": password
-    //   }
-    //   request(
-    //     {
-    //       method: 'POST',
-    //       url: 'http://localhost:5000/api/users/login',
-    //       json: loginReqJSON,
-    //     },
-    //     (err, httpResponse, body) => {
-    //       if (body._id) {
-    //         console.log('id:', body._id);
-    //         console.log('body found');
-    //         commit('setSelf', body);
-    //       } else {
-    //         console.log('error');
-    //         commit('setSelf', {});
-    //       }
-    //     }
-    //   );
-    //   dispatch('prune');
-    // },
+    login({commit, dispatch}, {username, password}) {
+      dispatch('logout');
+      console.log('store.js login()');
+      var loginReqJSON = {
+        "username": username,
+        "password": password
+      }
+      request(
+        {
+          method: 'POST',
+          url: 'http://localhost:5000/api/users/login',
+          json: loginReqJSON,
+        },
+        (err, httpResponse, body) => {
+          if (body._id) {
+            console.log('id:', body._id);
+            console.log('body found');
+            commit('setSelf', body);
+          } else {
+            console.log('error');
+            commit('setSelf', {});
+          }
+        }
+      );
+      dispatch('prune');
+    },
     logout({commit, dispatch}) {
       console.log('store.js logout()');
       commit('setSelf', {});
