@@ -37,9 +37,10 @@
     </div>
     <button type="button" v-on:click="prune()">prune channels</button>
     <button type="button" v-on:click="getChannels()">get channels</button>
-    <ul id="channelList">
-      <li v-for="channel in channelList">
-        <!-- <channel-card v-bind:channel="channel._id"/> -->
+    <button type="button" v-on:click="$store.dispatch('channelView')">view channels</button>
+    <ul id="channelList" v-if="$store.state.view === 'channelView'">
+      <li v-for="channel in $store.state.channels">
+        <channel-card :channelId="channel._id"/>
       </li>
     </ul>
   </div>

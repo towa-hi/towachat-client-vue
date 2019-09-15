@@ -1,5 +1,5 @@
 <template>
-  <div class="channel-card" v-if="$store.state.channels[this.channelId]">
+  <div class="channel-card" v-if="channel">
     <ul>
       <li>id: {{channel._id}}</li>
       <li>name: {{channel.name}}</li>
@@ -7,8 +7,8 @@
     </ul>
     members:
     <ul>
-      <li v-for="member in channel.members">
-        {{$store.state.users[member].username}}
+      <li v-for="memberId in channel.members">
+        {{memberId}}
       </li>
     </ul>
     <button v-if="channel.members.indexOf($store.state.self) !== -1" type="button" v-on:click="$store.dispatch('leaveChannel', channel._id)">leave channel</button>
@@ -27,13 +27,25 @@ export default {
   },
   computed: {
     channel() {
-      //this returns unresolved cuz it hasnt requested the channelid first
-      //gotta figure out how to fix this part
-      return this.$store.state.channels[this.channelId];
+      var channel = this.$store.state.channels[this.channelId];
+      if (channel) {
+        if (channel.alive) {
+          return this.$store.state.channels[this.channelId];
+        }
+      }
+      return false;
     }
   },
   created() {
+    //FIX THIS LATER
     this.$store.dispatch('requestChannel', this.channelId);
+
+    // this.$store.dispatch('requestChannel', this.channelId).then(() => {
+    //   console.log(this.$store.state.channels[this.channelId].members)
+    //   for (var memberId in this.$store.state.channels[this.channelId].members) {
+    //     this.$store.dispatch('getUser', memberId);
+    //   }
+    // });
   }
 }
 </script>

@@ -94,7 +94,6 @@
           }
         }
         console.log('App.js validateChannelName failed');
-        console.log(channelName);
         return false;
       },
       validateChannelDescription(channelDescription) {
@@ -142,7 +141,12 @@
         this.$store.dispatch('getChannels');
       },
       createChannel(name, description, isPublic) {
-        this.$store.dispatch('createChannel', {name, description, isPublic});
+        if (this.validateChannelName(name)) {
+          if (this.validateChannelDescription(description)) {
+            var createChannelArgs = {name: name, description: description, isPublic: true}
+            this.$store.dispatch('createChannel', createChannelArgs);
+          }
+        }
       },
       editChannel(channelId, avatar, description, name) {
         var edited = false;
@@ -181,6 +185,7 @@
     },
     created() {
       console.log('App.js.created()');
+      
       // if (localStorage.token) {
       //   console.log('App.js.mounted(): token detected:', localStorage.token);
       //   this.$store.dispatch('verify', localStorage.token);

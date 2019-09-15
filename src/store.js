@@ -13,7 +13,8 @@ export default new Vuex.Store({
     messages: {},
     joinedChannels: {},
     connected: false,
-    authenticated: false
+    authenticated: false,
+    view: 'main',
   },
   getters: {
     getSelf(state) {
@@ -22,10 +23,7 @@ export default new Vuex.Store({
     getChannel(state, channelId) {
       return state.channels[channelId];
     },
-    getUser(state, userId) {
 
-      return state.users[userId];
-    }
   },
   mutations: {
     connected(state, isConnected) {
@@ -38,9 +36,11 @@ export default new Vuex.Store({
     },
     setSelf(state, userId) {
       state.self = userId;
-      for (var index in state.users[state.self].channels) {
-        var channelId = state.users[state.self].channels[index];
-        Vue.set(state.joinedChannels, channelId, []);
+      if (state.self) {
+        for (var index in state.users[state.self].channels) {
+          var channelId = state.users[state.self].channels[index];
+          Vue.set(state.joinedChannels, channelId, []);
+        }
       }
       console.log('mutation setSelf');
     },
@@ -76,17 +76,36 @@ export default new Vuex.Store({
       } else {
         state.joinedChannels[messages[0].channel].shift(message._id);
       }
+    },
+    changeView(state, view) {
+      state.view = view;
+      console.log('mutation changeView');
     }
   },
   actions: {
+    getUser({commit, dispatch, state}, userId) {
+      console.log('action getUser')
+      if (state.users[userId]) {
+        return state.users[userId];
+      } else {
+        this._vm.$socket.emit('getUser', userId, (response) => {
+          commit('addUser', response);
+          console.log('getuser response')
+          console.log(response)
+          return response;
+        });
+      }
+    },
     SOCKET_wewlad({commit, dispatch}) {
       console.log('WEW LAD!');
     },
     SOCKET_connect({commit, dispatch}) {
       console.log('action SOCKET_connect')
       commit('connected', true);
-      console.log('socket.emit authenticate')
-      this._vm.$socket.emit('authenticate', {token: localStorage.token});
+      if (localStorage.token) {
+        console.log('socket.emit authenticate')
+        this._vm.$socket.emit('authenticate', {token: localStorage.token});
+      }
     },
     SOCKET_addUser({commit, dispatch}, user) {
       console.log('action SOCKET_addUser');
@@ -167,10 +186,40 @@ export default new Vuex.Store({
     editChannel({commit, dispatch}, {channelId, avatar, description, name}) {
       console.log('action editChannel');
       console.log('socket.emit editChannel');
-      this._vm.$socket.emit('editChannel', {channelId: channelId, avatar: avatar, description: description, name: name}, (response) => {
-        console.log('socket.emit editChannel ack');
-        commit('addChannel', response);
+      this._vm.$socket.emit('editChannel', {channelId: channelId, avatar: avatar, description: description, name: name});
+    },
+    createChannel({commit, dispatch}, {name, description, isPublic}) {
+      console.log('action createChannel');
+      console.log('socket.emit createChannel');
+      this._vm.$socket.emit('createChannel', {name: name, description: description, isPublic: isPublic});
+    },
+    deleteChannel({commit, dispatch}, channelId) {
+      console.log('action deleteChannel');
+      console.log('socket.emit deleteChannel');
+      this._vm.$socket.emit('deleteChannel', channelId, (response) => {
+        console.log('socket.emit deleteChannel ack: ' + response);
       });
+    },
+    requestAllChannels({commit, dispatch}) {
+      console.log('action requestAllChannels');
+      this._vm.$socket.emit('getAllChannels', (response) => {
+        console.log(response);
+        for (var index in response) {
+          commit('addChannel', response[index]);
+        }
+      });
+    },
+    joinChannel({commit, dispatch}, channelId) {
+      console.log('action joinChannel');
+      console.log('socket.emit joinChannel');
+      this._vm.$socket.emit('joinChannel', channelId, (response) => {
+        console.log('socket emit joinChannel ack: ' + response);
+      })
+    },
+    channelView({commit, dispatch}) {
+      dispatch('requestAllChannels');
+
+      commit('changeView', 'channelView');
     }
 
 
