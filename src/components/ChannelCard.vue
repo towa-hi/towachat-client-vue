@@ -8,10 +8,10 @@
     members:
     <ul>
       <li v-for="member in channel.members">
-
+        {{$store.state.users[member].username}}
       </li>
     </ul>
-    <button v-if="channel.members.indexOf($store.state.self._id) !== -1" type="button" v-on:click="$store.dispatch('leaveChannel', channel._id)">leave channel</button>
+    <button v-if="channel.members.indexOf($store.state.self) !== -1" type="button" v-on:click="$store.dispatch('leaveChannel', channel._id)">leave channel</button>
     <button v-else type="button" v-on:click="$store.dispatch('joinChannel', channel._id)">join channel</button>
   </div>
 </template>

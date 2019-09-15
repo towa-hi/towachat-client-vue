@@ -10,9 +10,10 @@ export default new Vuex.Store({
     self: null,
     users: {},
     channels: {},
+    messages: {},
+    joinedChannels: {},
     connected: false,
-    authenticated: false,
-    benis: "5d6b54b10adb60228c949bb7"
+    authenticated: false
   },
   getters: {
     getSelf(state) {
@@ -37,6 +38,10 @@ export default new Vuex.Store({
     },
     setSelf(state, userId) {
       state.self = userId;
+      for (var index in state.users[state.self].channels) {
+        var channelId = state.users[state.self].channels[index];
+        Vue.set(state.joinedChannels, channelId, []);
+      }
       console.log('mutation setSelf');
     },
     setChannels(state, channels) {
@@ -56,61 +61,117 @@ export default new Vuex.Store({
       Vue.set(state.users, user._id, user);
       // state.users[user._id] = user;
       console.log('mutation addUser');
+    },
+    addMessage(state, message) {
+      Vue.set(state.messages, message._id, message);
+      state.joinedChannels[message.channel].push(message._id);
+      console.log('mutation addMessage');
+    },
+    addMessageBatch(state, messages, past) {
+      for (var message in messages) {
+        Vue.set(state.messages,message._id, message);
+      }
+      if (past == true) {
+        state.joinedChannels[messages[0].channel].unshift(message._id);
+      } else {
+        state.joinedChannels[messages[0].channel].shift(message._id);
+      }
     }
   },
   actions: {
+    SOCKET_wewlad({commit, dispatch}) {
+      console.log('WEW LAD!');
+    },
     SOCKET_connect({commit, dispatch}) {
+      console.log('action SOCKET_connect')
       commit('connected', true);
       console.log('socket.emit authenticate')
       this._vm.$socket.emit('authenticate', {token: localStorage.token});
     },
     SOCKET_addUser({commit, dispatch}, user) {
+      console.log('action SOCKET_addUser');
       commit('addUser', user);
-      // for (var key in user.channels) {
-      //   var channelId = user.channels[key];
-      //   console.log('socket emit getChannel');
-      //   this._vm.$socket.emit('getChannel', user.channels[key]);
-      // }
     },
     SOCKET_addChannel({commit, dispatch}, channel) {
+      console.log('action SOCKET_addChannel');
       commit('addChannel', channel);
     },
     SOCKET_addSelf({commit, dispatch}, selfId) {
+      console.log('action SOCKET_addSelf');
       commit('authenticated', true);
       commit('setSelf', selfId);
     },
     SOCKET_newToken({commit, dispatch}, token) {
+      console.log('action SOCKET_newToken');
       localStorage.setItem('token', token);
     },
-    SOCKET_unauthorized({commit, dispatch}) {
-      console.log('unauthorized');
+    SOCKET_unauthorized({commit, dispatch}, msg) {
+      console.log('action SOCKET_unauthorized' + msg);
       dispatch('logout');
     },
     login({commit, dispatch}, {username, password}) {
-      console.log('store.js login')
+      console.log('action login')
       console.log('socket.emit login');
-      this._vm.$socket.emit('login', {username: username, password: password});
+      this._vm.$socket.emit('login', {username: username, password: password}, (response) => {
+        console.log('socket.emit login ack');
+        commit('authenticated', true);
+        commit('addUser', response.user);
+        commit('setSelf', response.user._id);
+        dispatch('SOCKET_newToken', response.token);
+      });
+    },
+    register({commit, dispatch}, {username, password, passwordVerify}) {
+      console.log('action register');
+      if (password === passwordVerify) {
+        var credentials = {
+          username: username,
+          password: password
+        };
+        this._vm.$socket.emit('register', credentials, (response) => {
+          console.log('socket.emit register ack');
+          commit('authenticated', true);
+          commit('addUser', response.user);
+          commit('setSelf', response.user._id);
+          dispatch('SOCKET_newToken', response.token);
+        });
+      }
     },
     logout({commit, dispatch}) {
-      console.log('store.js logout');
+      console.log('action logout');
       commit('authenticated', false);
       commit('setSelf', null);
+      localStorage.removeItem('token');
     },
     requestUser({commit, dispatch}, userId) {
-      console.log('store.js requestUser');
+      console.log('action requestUser');
       console.log('socket.emit getUser');
       this._vm.$socket.emit('getUser', userId, (response) => {
         commit('addUser', response);
       });
     },
     requestChannel({commit, dispatch}, channelId) {
-      console.log('store.js requestChannel');
+      console.log('action requestChannel');
       console.log('socket.emit getChannel');
       this._vm.$socket.emit('getChannel', channelId, (response) => {
         commit('addChannel', response);
       });
+    },
+    editSelf({commit, dispatch}, {avatar, handle}) {
+      console.log('action editSelf');
+      console.log('socket.emit editSelf');
+      this._vm.$socket.emit('editSelf', {avatar: avatar, handle: handle}, (response) => {
+        console.log('socket.emit editSelf ack');
+        commit('addUser', response);
+      });
+    },
+    editChannel({commit, dispatch}, {channelId, avatar, description, name}) {
+      console.log('action editChannel');
+      console.log('socket.emit editChannel');
+      this._vm.$socket.emit('editChannel', {channelId: channelId, avatar: avatar, description: description, name: name}, (response) => {
+        console.log('socket.emit editChannel ack');
+        commit('addChannel', response);
+      });
     }
-
 
 
 
@@ -214,6 +275,7 @@ export default new Vuex.Store({
     //     }
     //   );
     // },
+
     // register({commit, dispatch}, {username, password, passwordVerify}) {
     //   console.log('store.js register()');
     //   if (password === passwordVerify) {

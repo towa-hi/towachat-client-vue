@@ -93,12 +93,15 @@
             return true;
           }
         }
+        console.log('App.js validateChannelName failed');
+        console.log(channelName);
         return false;
       },
       validateChannelDescription(channelDescription) {
         if (Validator.isLength(channelDescription, config.MIN_CHANNEL_DESCRIPTION_LENGTH, config.MAX_CHANNEL_DESCRIPTION_LENGTH)) {
           return true;
         }
+        console.log('App.js validateChannelDescription failed');
         return false;
       },
       validateChannelAvatar(avatar) {
@@ -122,16 +125,17 @@
       },
       editSelf(avatar, handle) {
         var edited = false;
-        if (!this.validateHandle(handle)) {
-          handle = '';
+        var newUserInfo = {avatar: '', handle: ''};
+        if (this.validateHandle(handle)) {
+          newUserInfo.handle = handle;
           edited = true;
         }
-        if (!this.validateAvatar(avatar)) {
-          avatar = '';
-          edited: true;
+        if (this.validateAvatar(avatar)) {
+          newUserInfo.avatar = avatar;
+          edited = true;
         }
-        if (edited = true) {
-          this.$store.dispatch('editSelf', {avatar, handle});
+        if (edited == true) {
+          this.$store.dispatch('editSelf', newUserInfo);
         }
       },
       getChannels() {
@@ -140,10 +144,27 @@
       createChannel(name, description, isPublic) {
         this.$store.dispatch('createChannel', {name, description, isPublic});
       },
-      editChannel(channelId, name, description, isPublic, avatar) {
+      editChannel(channelId, avatar, description, name) {
         var edited = false;
-        //STOPPED HERE WORK ON THIS LATER
-        this.$store.dispatch('editChannel', {channelId, name, description, isPublic, avatar});
+        var newChannelInfo = {channelId: channelId, avatar: '', description: '', name: ''};
+        if (this.validateAvatar(avatar)) {
+          newChannelInfo.avatar = avatar;
+          edited = true;
+        }
+        if (this.validateChannelDescription(description)) {
+          newChannelInfo.description = description;
+          edited = true;
+        }
+        if (this.validateChannelName(name)) {
+          newChannelInfo.name = name;
+          edited = true;
+        }
+        if (edited == true) {
+          console.log('dispatching');
+          this.$store.dispatch('editChannel', newChannelInfo)
+        } else {
+          console.log('must edit');
+        }
       },
       deleteChannel(channelId) {
         this.$store.dispatch('deleteChannel', channelId);

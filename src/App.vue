@@ -2,7 +2,6 @@
   <div id="app" v-if="$store.state.connected">
     <h1 v-if="$store.state.authenticated"> user logged in: {{$store.getters.getSelf.username}}</h1>
     <user-card v-if="$store.state.authenticated" :userId="$store.state.self"/>
-    <user-card :userId="$store.state.benis"/>
     <div id="login">
       <input type="username" name="username" v-model="loginInput.username" placeholder="Username" />
       <input type="password" name="password" v-model="loginInput.password" placeholder="Password" />
@@ -27,10 +26,10 @@
     </div>
     <div id="editChannel">
       <input type="text" name="editChannelChannelId" v-model="editChannelInput.channelId" placeholder="channelId" />
-      <input type="text" name="editChannelName" v-model="editChannelInput.name" placeholder="name" />
-      <input type="text" name="editChannelDescription" v-model="editChannelInput.description" placeholder="description" />
       <input type="text" name="editChannelAvatar" v-model="editChannelInput.avatar" placeholder="avatar" />
-      <button type="button" v-on:click="editChannel(editChannelInput.channelId, editChannelInput.name, editChannelInput.description, editChannelInput.isPublic, editChannelInput.avatar)">edit channel</button>
+      <input type="text" name="editChannelDescription" v-model="editChannelInput.description" placeholder="description" />
+      <input type="text" name="editChannelName" v-model="editChannelInput.name" placeholder="name" />
+      <button type="button" v-on:click="editChannel(editChannelInput.channelId, editChannelInput.avatar, editChannelInput.description, editChannelInput.name)">edit channel</button>
     </div>
     <div id="deleteChannel">
       <input type="text" name="deleteChannelId" v-model="deleteChannelInput.channelId" placeholder="channelId" />
