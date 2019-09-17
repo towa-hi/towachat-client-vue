@@ -1,5 +1,5 @@
 <template>
-  <div class="user-card" v-if="$store.state.users[this.userId]">
+  <div class="user-card">
     User Info
     <ul>
       <li>id: {{user._id}}</li>
@@ -8,7 +8,7 @@
       <li>avatar: {{user.avatar}}</li>
       <ul id="user-card-channel-list">
         <li v-for="channelId in user.channels">
-          <channel-card :channelId="channelId"/>
+          <channel-card :channelId="channelId" :update="true"/>
         </li>
       </ul>
     </ul>
@@ -24,16 +24,28 @@ export default {
     userId: {
       required: true,
       type: String
+    },
+    update: {
+      required: true,
+      type: Boolean
     }
   },
-  computed: {
-    user() {
-
-      return this.$store.state.users[this.userId];
+  data: function () {
+    return {
+      user: {},
     }
   },
   created() {
-    this.$store.dispatch('requestUser', this.userId);
+    if (this.update) {
+      this.$store.dispatch('getUser', this.userId).then((response) => {
+        this.user = response;
+      });
+    } else {
+      this.$store.dispatch('getEphemeralUser', this.userId).then((response) => {
+        this.user = response;
+      });
+    }
+
   }
 }
 </script>

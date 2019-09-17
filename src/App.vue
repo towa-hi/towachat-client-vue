@@ -1,7 +1,7 @@
 <template>
   <div id="app" v-if="$store.state.connected">
     <h1 v-if="$store.state.authenticated"> user logged in: {{$store.getters.getSelf.username}}</h1>
-    <user-card v-if="$store.state.authenticated" :userId="$store.state.self"/>
+    <user-card v-if="$store.state.authenticated" :userId="$store.state.self" :update="true"/>
     <div id="login">
       <input type="username" name="username" v-model="loginInput.username" placeholder="Username" />
       <input type="password" name="password" v-model="loginInput.password" placeholder="Password" />
@@ -40,7 +40,7 @@
     <button type="button" v-on:click="$store.dispatch('channelView')">view channels</button>
     <ul id="channelList" v-if="$store.state.view === 'channelView'">
       <li v-for="channel in $store.state.channels">
-        <channel-card :channelId="channel._id"/>
+        <channel-card :channelId="channel._id" :update="false"/>
       </li>
     </ul>
   </div>

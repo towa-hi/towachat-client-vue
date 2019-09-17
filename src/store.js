@@ -2,7 +2,6 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 const request = require('request');
 const config = require('../config/main');
-// const socket = require('./socket');
 Vue.use(Vuex)
 
 export default new Vuex.Store({
@@ -83,22 +82,11 @@ export default new Vuex.Store({
     }
   },
   actions: {
-    getUser({commit, dispatch, state}, userId) {
-      console.log('action getUser')
-      if (state.users[userId]) {
-        return state.users[userId];
-      } else {
-        this._vm.$socket.emit('getUser', userId, (response) => {
-          commit('addUser', response);
-          console.log('getuser response')
-          console.log(response)
-          return response;
-        });
-      }
-    },
+
     SOCKET_wewlad({commit, dispatch}) {
       console.log('WEW LAD!');
     },
+
     SOCKET_connect({commit, dispatch}) {
       console.log('action SOCKET_connect')
       commit('connected', true);
@@ -107,27 +95,33 @@ export default new Vuex.Store({
         this._vm.$socket.emit('authenticate', {token: localStorage.token});
       }
     },
+
     SOCKET_addUser({commit, dispatch}, user) {
       console.log('action SOCKET_addUser');
       commit('addUser', user);
     },
+
     SOCKET_addChannel({commit, dispatch}, channel) {
       console.log('action SOCKET_addChannel');
       commit('addChannel', channel);
     },
+
     SOCKET_addSelf({commit, dispatch}, selfId) {
       console.log('action SOCKET_addSelf');
       commit('authenticated', true);
       commit('setSelf', selfId);
     },
+
     SOCKET_newToken({commit, dispatch}, token) {
       console.log('action SOCKET_newToken');
       localStorage.setItem('token', token);
     },
+
     SOCKET_unauthorized({commit, dispatch}, msg) {
       console.log('action SOCKET_unauthorized' + msg);
       dispatch('logout');
     },
+
     login({commit, dispatch}, {username, password}) {
       console.log('action login')
       console.log('socket.emit login');
@@ -139,6 +133,7 @@ export default new Vuex.Store({
         dispatch('SOCKET_newToken', response.token);
       });
     },
+
     register({commit, dispatch}, {username, password, passwordVerify}) {
       console.log('action register');
       if (password === passwordVerify) {
@@ -155,26 +150,85 @@ export default new Vuex.Store({
         });
       }
     },
+
     logout({commit, dispatch}) {
       console.log('action logout');
       commit('authenticated', false);
       commit('setSelf', null);
       localStorage.removeItem('token');
     },
-    requestUser({commit, dispatch}, userId) {
-      console.log('action requestUser');
+
+    subUser({commit, dispatch}, userId) {
+      console.log('action subUser');
       console.log('socket.emit getUser');
       this._vm.$socket.emit('getUser', userId, (response) => {
         commit('addUser', response);
       });
     },
-    requestChannel({commit, dispatch}, channelId) {
-      console.log('action requestChannel');
+
+    getUser({commit, dispatch, state}, userId) {
+      console.log('action getUser');
+      return new Promise((resolve, reject) => {
+        console.log('socket.emit getUser');
+        this._vm.$socket.emit('getUser', userId, (response) => {
+          commit('addUser', response);
+          resolve(state.users[userId]);
+        });
+      })
+    },
+
+    getEphemeralUser({commit, dispatch, state}, userId) {
+      console.log('action getEphemeralUser')
+      return new Promise((resolve, reject) => {
+        //if client is already subbed to a user (if user obj in store)
+        if (state.users[userId]) {
+          console.log('getEphemeralUser served from state')
+          resolve(state.users[userId]);
+        } else {
+          console.log('socket.emit getEphemeraluser');
+          this._vm.$socket.emit('getEphemeralUser', userId, (response) => {
+            console.log('getEphemeralUser callback');
+            resolve(response);
+          });
+        }
+      });
+    },
+
+    subChannel({commit, dispatch}, channelId) {
+      console.log('action subChannel');
       console.log('socket.emit getChannel');
       this._vm.$socket.emit('getChannel', channelId, (response) => {
         commit('addChannel', response);
       });
     },
+
+    getChannel({commit, dispatch, state}, channelId) {
+      console.log('action getChannel');
+      return new Promise((resolve, reject) => {
+        console.log('socket.emit getChannel');
+        this._vm.$socket.emit('getChannel', channelId, (response) => {
+          commit('addChannel', response);
+          resolve(state.channels[channelId]);
+        });
+      });
+    },
+
+    getEphemeralChannel({commit, dispatch, state}, channelId) {
+      console.log('action getEphemeralChannel');
+      return new Promise((resolve, reject) => {
+        if (state.channels[channelId]) {
+          console.log('getEphemeralChannel served from state');
+          resolve(state.channels[channelId]);
+        } else {
+          console.log('socket.emit getEphemeralChannel');
+          this._vm.$socket.emit('getEphemeralChannel', channelId, (response) => {
+            console.log('getEphemeralChannel callback');
+            resolve(response);
+          });
+        }
+      });
+    },
+
     editSelf({commit, dispatch}, {avatar, handle}) {
       console.log('action editSelf');
       console.log('socket.emit editSelf');
@@ -183,16 +237,19 @@ export default new Vuex.Store({
         commit('addUser', response);
       });
     },
+
     editChannel({commit, dispatch}, {channelId, avatar, description, name}) {
       console.log('action editChannel');
       console.log('socket.emit editChannel');
       this._vm.$socket.emit('editChannel', {channelId: channelId, avatar: avatar, description: description, name: name});
     },
+
     createChannel({commit, dispatch}, {name, description, isPublic}) {
       console.log('action createChannel');
       console.log('socket.emit createChannel');
       this._vm.$socket.emit('createChannel', {name: name, description: description, isPublic: isPublic});
     },
+
     deleteChannel({commit, dispatch}, channelId) {
       console.log('action deleteChannel');
       console.log('socket.emit deleteChannel');
@@ -200,8 +257,10 @@ export default new Vuex.Store({
         console.log('socket.emit deleteChannel ack: ' + response);
       });
     },
+
     requestAllChannels({commit, dispatch}) {
       console.log('action requestAllChannels');
+      //MAKE THIS A PROMISE LATER
       this._vm.$socket.emit('getAllChannels', (response) => {
         console.log(response);
         for (var index in response) {
@@ -209,18 +268,28 @@ export default new Vuex.Store({
         }
       });
     },
+
     joinChannel({commit, dispatch}, channelId) {
       console.log('action joinChannel');
       console.log('socket.emit joinChannel');
       this._vm.$socket.emit('joinChannel', channelId, (response) => {
         console.log('socket emit joinChannel ack: ' + response);
-      })
+      });
     },
+
+    leaveChannel({commit, dispatch}, channelId) {
+      console.log('action leaveChannel');
+      console.log('socket.emit leaveChannel');
+      this._vm.$socket.emit('leaveChannel', channelId, (response) => {
+        console.log('socket emit leaveChannel ack: ' + response);
+      });
+    },
+
     channelView({commit, dispatch}) {
       dispatch('requestAllChannels');
-
       commit('changeView', 'channelView');
-    }
+    },
+
 
 
 
