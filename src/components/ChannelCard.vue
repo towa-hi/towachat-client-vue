@@ -1,22 +1,23 @@
 <template>
-  <div class="channel-card" v-if="channel">
-    update: {{this.update}}
+  <div class="channel-card" v-if="!loading">
     <ul>
       <li>id: {{channel._id}}</li>
       <li>name: {{channel.name}}</li>
-      <li>owner: {{channel.owner}}
+      <li>owner: {{channel.owner}}</li>
       <li>description: {{channel.description}}</li>
     </ul>
     members:
     <ul>
       <li v-for="memberId in channel.members">
-        <user-preview :userId="memberId"/>
+        <user :userId="memberId"/>
       </li>
     </ul>
-    <!-- <div v-if="$store.state.authenticated">
+    <!-- this needs to be fixed to not error on load -->
+    <div v-if="channel.owner !== $store.state.self">
       <button v-if="channel.members.indexOf($store.state.self) !== -1" type="button" v-on:click="$store.dispatch('leaveChannel', channel._id)">leave channel</button>
       <button v-else type="button" v-on:click="$store.dispatch('joinChannel', channel._id)">join channel</button>
-    </div> -->
+    </div>
+
   </div>
 </template>
 
@@ -35,20 +36,28 @@ export default {
   },
   data: function () {
     return {
-      channel: {}
+      ephemeralChannel: {},
+      loading: true
+    }
+  },
+  computed: {
+    channel() {
+      if (this.update == true) {
+        return this.$store.state.channels[this.channelId];
+      } else {
+        return this.ephemeralChannel;
+      }
     }
   },
   created() {
-    console.log('CHANNELCARD MADE')
     if (this.update) {
-      console.log('GETTING UPDATE OBJ')
       this.$store.dispatch('getChannel', this.channelId).then((response) => {
-        this.channel = response;
+        this.loading = false;
       });
     } else {
-      console.log('GETTING EPHEMERAL OBJ');
       this.$store.dispatch('getEphemeralChannel', this.channelId).then((response) => {
-        this.channel = response;
+        this.ephemeralChannel = response;
+        this.loading = false;
       })
     }
   }

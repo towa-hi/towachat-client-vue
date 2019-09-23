@@ -13,7 +13,7 @@ export default new Vuex.Store({
     joinedChannels: {},
     connected: false,
     authenticated: false,
-    view: 'main',
+    view: 'mainView',
   },
   getters: {
     getSelf(state) {
@@ -62,6 +62,8 @@ export default new Vuex.Store({
       console.log('mutation addUser');
     },
     addMessage(state, message) {
+      console.log('MSG ADDED')
+      console.log(message);
       Vue.set(state.messages, message._id, message);
       state.joinedChannels[message.channel].push(message._id);
       console.log('mutation addMessage');
@@ -106,10 +108,13 @@ export default new Vuex.Store({
       commit('addChannel', channel);
     },
 
-    SOCKET_addSelf({commit, dispatch}, selfId) {
+    SOCKET_addSelf({commit, dispatch, state}, selfId) {
       console.log('action SOCKET_addSelf');
       commit('authenticated', true);
       commit('setSelf', selfId);
+      for (var index in state.users[selfId].channels) {
+        dispatch('getChannel', state.users[selfId].channels[index]);
+      }
     },
 
     SOCKET_newToken({commit, dispatch}, token) {
@@ -122,6 +127,11 @@ export default new Vuex.Store({
       dispatch('logout');
     },
 
+    SOCKET_newMessage({commit, dispatch}, message) {
+      console.log('action SOCKET_newMessage');
+      console.log(message);
+      commit('addMessage', message);
+    },
     login({commit, dispatch}, {username, password}) {
       console.log('action login')
       console.log('socket.emit login');
@@ -156,6 +166,7 @@ export default new Vuex.Store({
       commit('authenticated', false);
       commit('setSelf', null);
       localStorage.removeItem('token');
+      // probably code here to unsub from everything
     },
 
     subUser({commit, dispatch}, userId) {
@@ -185,7 +196,7 @@ export default new Vuex.Store({
           console.log('getEphemeralUser served from state')
           resolve(state.users[userId]);
         } else {
-          console.log('socket.emit getEphemeraluser');
+          console.log('socket.emit getEphemeralUser');
           this._vm.$socket.emit('getEphemeralUser', userId, (response) => {
             console.log('getEphemeralUser callback');
             resolve(response);
@@ -262,7 +273,6 @@ export default new Vuex.Store({
       console.log('action requestAllChannels');
       //MAKE THIS A PROMISE LATER
       this._vm.$socket.emit('getAllChannels', (response) => {
-        console.log(response);
         for (var index in response) {
           commit('addChannel', response[index]);
         }
@@ -273,6 +283,7 @@ export default new Vuex.Store({
       console.log('action joinChannel');
       console.log('socket.emit joinChannel');
       this._vm.$socket.emit('joinChannel', channelId, (response) => {
+        dispatch('subChannel', channelId);
         console.log('socket emit joinChannel ack: ' + response);
       });
     },
@@ -285,12 +296,20 @@ export default new Vuex.Store({
       });
     },
 
-    channelView({commit, dispatch}) {
-      dispatch('requestAllChannels');
-      commit('changeView', 'channelView');
+    changeView({commit, dispatch}, viewName) {
+
+      if (viewName === 'channelListView') {
+        dispatch('requestAllChannels');
+      }
+      commit('changeView', viewName);
     },
 
-
+    createMessage({commit, dispatch}, message) {
+      console.log('action createMessage');
+      this._vm.$socket.emit('createMessage', message, (response) => {
+        console.log(response);
+      });
+    }
 
 
 

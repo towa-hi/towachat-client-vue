@@ -1,7 +1,26 @@
 <template>
   <div id="app" v-if="$store.state.connected">
     <h1 v-if="$store.state.authenticated"> user logged in: {{$store.getters.getSelf.username}}</h1>
-    <user-card v-if="$store.state.authenticated" :userId="$store.state.self" :update="true"/>
+
+    <button type="button" v-on:click="$store.dispatch('changeView','channelListView')">view channels</button>
+    <button type="button" v-on:click="$store.dispatch('changeView','selfView')">view self</button>
+    <button type="button" v-on:click="$store.dispatch('changeView','chatView')">view chat</button>
+    <div class="tab-contents" v-if="$store.state.view === 'channelListView'">
+      <ul id="channelList">
+        <li v-for="channel in $store.state.channels">
+          <channel-card :channelId="channel._id" :update="false"/>
+        </li>
+      </ul>
+    </div>
+    <div class="tab-contents" v-if="$store.state.view === 'selfView'">
+      <user-card v-if="$store.state.authenticated" :userId="$store.state.self" :update="true"/>
+    </div>
+    <div class="tab-contents" v-if="$store.state.view === 'chatView'">
+      <chat :channelId="$store.state.users[$store.state.self].channels[0]"/>
+    </div>
+
+
+
     <div id="login">
       <input type="username" name="username" v-model="loginInput.username" placeholder="Username" />
       <input type="password" name="password" v-model="loginInput.password" placeholder="Password" />
@@ -38,11 +57,7 @@
     <button type="button" v-on:click="prune()">prune channels</button>
     <button type="button" v-on:click="getChannels()">get channels</button>
     <button type="button" v-on:click="$store.dispatch('channelView')">view channels</button>
-    <ul id="channelList" v-if="$store.state.view === 'channelView'">
-      <li v-for="channel in $store.state.channels">
-        <channel-card :channelId="channel._id" :update="false"/>
-      </li>
-    </ul>
+
   </div>
 
 </template>

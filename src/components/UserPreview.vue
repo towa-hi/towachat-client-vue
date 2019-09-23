@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="!loading">
     {{user.username}}
   </div>
 </template>
@@ -10,22 +10,39 @@ export default {
   name: 'user',
   props: {
     userId: {
+      require: true,
       type: String
+    },
+    update: {
+      type: Boolean
     }
   },
   data: function () {
     return {
-      user: {},
+      ephemeralUser: {},
+      loading: true
     }
   },
-  mounted() {
-    // this.getUser();
-    // if im not subbed to this
-    this.$store.dispatch('getEphemeralUser', this.userId).then((response) => {
-      console.log('GOT RESPONSE');
-      this.user = response;
-      console.log(response);
-    });
+  computed: {
+    user() {
+      if (this.update == true) {
+        return this.$store.state.users[this.userId];
+      } else {
+        return this.ephemeralUser;
+      }
+    }
+  },
+  created() {
+    if (this.update) {
+      this.$store.dispatch('getUser', this.userId).then((response) => {
+        this.loading = false;
+      });
+    } else {
+      this.$store.dispatch('getEphemeralUser', this.userId).then((response) => {
+        this.ephemeralUser = response;
+        this.loading = false;
+      });
+    }
   }
 }
 </script>

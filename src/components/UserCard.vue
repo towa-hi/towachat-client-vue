@@ -1,5 +1,5 @@
 <template>
-  <div class="user-card">
+  <div class="user-card" v-if="!loading">
     User Info
     <ul>
       <li>id: {{user._id}}</li>
@@ -32,20 +32,31 @@ export default {
   },
   data: function () {
     return {
-      user: {},
+      ephemeralUser: {},
+      loading: true
+    }
+  },
+  computed: {
+    user() {
+      if (this.update == true) {
+        return this.$store.state.users[this.userId];
+      } else {
+        return this.ephemeralChannel;
+      }
     }
   },
   created() {
+    console.log('usercard created')
     if (this.update) {
       this.$store.dispatch('getUser', this.userId).then((response) => {
-        this.user = response;
+        this.loading = false;
       });
     } else {
       this.$store.dispatch('getEphemeralUser', this.userId).then((response) => {
-        this.user = response;
+        this.ephemeralUser = response;
+        this.loading = false;
       });
     }
-
   }
 }
 </script>
