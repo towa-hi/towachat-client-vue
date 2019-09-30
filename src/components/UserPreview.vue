@@ -1,6 +1,7 @@
 <template>
-  <div v-if="!loading">
-    {{user.username}}
+  <div class="user-preview" v-if="!loading">
+    <avatar :userId="userId" :update="update" :src="ephemeralUser.avatar"/>
+    <span class="user-preview-username">{{user.username}}</span>
   </div>
 </template>
 
@@ -25,11 +26,16 @@ export default {
   },
   computed: {
     user() {
-      if (this.update == true) {
+      if (this.$store.state.users[this.userId]) {
         return this.$store.state.users[this.userId];
       } else {
         return this.ephemeralUser;
       }
+      // if (this.update == true) {
+      //   return this.$store.state.users[this.userId];
+      // } else {
+      //   return this.ephemeralUser;
+      // }
     }
   },
   created() {
@@ -46,3 +52,15 @@ export default {
   }
 }
 </script>
+
+<style>
+.user-preview {
+  display: inline-block;
+  height: 1em;
+}
+.user-preview-username {
+  font-weight: bold;
+  line-height: 1em;
+  padding-left: 3px;
+}
+</style>

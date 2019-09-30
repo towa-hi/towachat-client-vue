@@ -62,21 +62,33 @@ export default new Vuex.Store({
       console.log('mutation addUser');
     },
     addMessage(state, message) {
-      console.log('MSG ADDED')
-      console.log(message);
       Vue.set(state.messages, message._id, message);
       state.joinedChannels[message.channel].push(message._id);
       console.log('mutation addMessage');
     },
-    addMessageBatch(state, messages, past) {
-      for (var message in messages) {
-        Vue.set(state.messages,message._id, message);
+    setMessages(state, messages) {
+      var messageIdArray  = []
+      for (var index in messages) {
+        Vue.set(state.messages, messages[index]._id, messages[index]);
+        messageIdArray.push(messages[index]._id);
       }
-      if (past == true) {
-        state.joinedChannels[messages[0].channel].unshift(message._id);
-      } else {
-        state.joinedChannels[messages[0].channel].shift(message._id);
+      state.joinedChannels[messages[0].channel] = messageIdArray;
+      console.log('mutation setMessages');
+    },
+    addMessagesBack(state, payload) {
+      var messages = payload.messages;
+      var from = payload.from;
+      var messageIdArray = []
+      for (var index in messages) {
+        Vue.set(state.messages, messages[index]._id, messages[index]);
+        messageIdArray.push(messages[index]._id);
       }
+      //combine arrays
+      var a1 = state.joinedChannels[messages[0].channel];
+      var fromIndex = a1.indexOf(from);
+      a1.splice(fromIndex, 0, ...messageIdArray)
+      console.log('mutation addMessagesBack');
+
     },
     changeView(state, view) {
       state.view = view;
@@ -189,16 +201,16 @@ export default new Vuex.Store({
     },
 
     getEphemeralUser({commit, dispatch, state}, userId) {
-      console.log('action getEphemeralUser')
+      // console.log('action getEphemeralUser')
       return new Promise((resolve, reject) => {
-        //if client is already subbed to a user (if user obj in store)
+        // if client is already subbed to a user (if user obj in store)
         if (state.users[userId]) {
-          console.log('getEphemeralUser served from state')
+          // console.log('getEphemeralUser served from state')
           resolve(state.users[userId]);
         } else {
-          console.log('socket.emit getEphemeralUser');
+          // console.log('socket.emit getEphemeralUser');
           this._vm.$socket.emit('getEphemeralUser', userId, (response) => {
-            console.log('getEphemeralUser callback');
+            // console.log('getEphemeralUser callback');
             resolve(response);
           });
         }
@@ -309,10 +321,26 @@ export default new Vuex.Store({
       this._vm.$socket.emit('createMessage', message, (response) => {
         console.log(response);
       });
+    },
+
+    getMessages({commit, dispatch}, {channelId, mode, from}) {
+      console.log('action getMessages');
+      this._vm.$socket.emit('getMessages', {channelId, mode, from}, (response) => {
+        console.log('socket emit getMessages ack: ');
+        if (response.length > 0) {
+          if (mode == 0) {
+            commit('setMessages', response);
+          } else if (mode < 0){
+            var payload = {messages: response,from: from}
+            console.log(payload);
+            commit('addMessagesBack', payload);
+          }
+        }
+        else {
+          console.log('action getMessages nothing left to get');
+        }
+      });
     }
-
-
-
 
     //
     // connected({commit, dispatch}, isConnected) {

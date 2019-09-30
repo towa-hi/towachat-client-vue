@@ -1,32 +1,20 @@
 <template>
-  <div class="user-card" v-if="!loading">
-    User Info
-    <ul>
-      <li>id: {{user._id}}</li>
-      <li>username: {{user.username}}</li>
-      <li>handle: {{user.handle}}</li>
-      <li>avatar: {{user.avatar}}</li>
-      <ul id="user-card-channel-list">
-        <li v-for="channelId in user.channels">
-          <channel-card :channelId="channelId" :update="true"/>
-        </li>
-      </ul>
-    </ul>
-
-
+  <div class="chat-userlist-user" v-if="!loading">
+    <avatar :userId="userId" :update="update" :src="ephemeralUser.avatar" :big="true"/>
+    <span class="chat-userlist-user-username">{{user.username}}</span>
   </div>
 </template>
 
 <script>
+
 export default {
-  name: 'user-card',
+  name: 'chat-userlist-user',
   props: {
     userId: {
-      required: true,
+      require: true,
       type: String
     },
     update: {
-      required: true,
       type: Boolean
     }
   },
@@ -38,15 +26,19 @@ export default {
   },
   computed: {
     user() {
-      if (this.update == true) {
+      if (this.$store.state.users[this.userId]) {
         return this.$store.state.users[this.userId];
       } else {
-        return this.ephemeralChannel;
+        return this.ephemeralUser;
       }
+      // if (this.update == true) {
+      //   return this.$store.state.users[this.userId];
+      // } else {
+      //   return this.ephemeralUser;
+      // }
     }
   },
   created() {
-    // console.log('usercard created')
     if (this.update) {
       this.$store.dispatch('getUser', this.userId).then((response) => {
         this.loading = false;
@@ -62,9 +54,15 @@ export default {
 </script>
 
 <style>
-.user-card {
-  border: 1px solid;
-  background-color: #42b983;
+.chat-userlist-user {
+  display: flex;
+  height: 2em;
+  margin: 2px;
+  border: 1px solid black;
 }
-
+.chat-userlist-user-username {
+  font-weight: bold;
+  line-height: 2em;
+  padding-left: 3px;
+}
 </style>

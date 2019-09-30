@@ -12,7 +12,6 @@
         <user :userId="memberId"/>
       </li>
     </ul>
-    <!-- this needs to be fixed to not error on load -->
     <div v-if="channel.owner !== $store.state.self">
       <button v-if="channel.members.indexOf($store.state.self) !== -1" type="button" v-on:click="$store.dispatch('leaveChannel', channel._id)">leave channel</button>
       <button v-else type="button" v-on:click="$store.dispatch('joinChannel', channel._id)">join channel</button>

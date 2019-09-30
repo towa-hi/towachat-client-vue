@@ -5,8 +5,11 @@ import store from './store';
 import UserCard from './components/UserCard.vue';
 import UserPreview from './components/UserPreview.vue'
 import ChannelCard from './components/ChannelCard.vue';
-import Chat from './components/Chat.vue'
-import VueSocketIO from 'vue-socket.io'
+import Chat from './components/Chat.vue';
+import VueSocketIO from 'vue-socket.io';
+import Message from './components/Message.vue';
+import Avatar from './components/Avatar.vue';
+import ChatUserListUser from './components/ChatUserListUser.vue';
 
 Vue.use(new VueSocketIO({
   debug: true,
@@ -16,10 +19,13 @@ Vue.use(new VueSocketIO({
     actionPrefix: 'SOCKET_'
   }
 }));
-Vue.component('user', UserPreview)
+Vue.component('user', UserPreview);
 Vue.component('user-card', UserCard);
 Vue.component('channel-card', ChannelCard);
 Vue.component('chat', Chat);
+Vue.component('message', Message);
+Vue.component('avatar', Avatar);
+Vue.component('chat-userlist-user', ChatUserListUser);
 Vue.config.productionTip = false;
 
 new Vue({

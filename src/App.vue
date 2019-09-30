@@ -16,7 +16,7 @@
       <user-card v-if="$store.state.authenticated" :userId="$store.state.self" :update="true"/>
     </div>
     <div class="tab-contents" v-if="$store.state.view === 'chatView'">
-      <chat :channelId="$store.state.users[$store.state.self].channels[0]"/>
+      <chat :channelId="$store.state.users[$store.state.self].channels[1]"/>
     </div>
 
 
@@ -69,4 +69,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+/* .tab-contents {
+  height: 600px;
+} */
 </style>
