@@ -38,7 +38,7 @@ export default {
       // }
     }
   },
-  created() {
+  mounted() {
     if (this.update) {
       this.$store.dispatch('getUser', this.userId).then((response) => {
         this.loading = false;

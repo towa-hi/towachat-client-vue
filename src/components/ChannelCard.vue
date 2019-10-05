@@ -14,7 +14,7 @@
     </ul>
     <div v-if="channel.owner !== $store.state.self">
       <button v-if="channel.members.indexOf($store.state.self) !== -1" type="button" v-on:click="$store.dispatch('leaveChannel', channel._id)">leave channel</button>
-      <button v-else type="button" v-on:click="$store.dispatch('joinChannel', channel._id)">join channel</button>
+      <button v-else type="button" v-on:click="joinChannel()">join channel</button>
     </div>
 
   </div>
@@ -48,7 +48,7 @@ export default {
       }
     }
   },
-  created() {
+  mounted() {
     if (this.update) {
       this.$store.dispatch('getChannel', this.channelId).then((response) => {
         this.loading = false;
@@ -57,8 +57,18 @@ export default {
       this.$store.dispatch('getEphemeralChannel', this.channelId).then((response) => {
         this.ephemeralChannel = response;
         this.loading = false;
-      })
+      });
     }
+  },
+  methods: {
+    joinChannel() {
+      this.$store.dispatch('joinChannel', this.channelId).then(() => {
+        this.$store.dispatch('getEphemeralChannel', this.channelId).then((response) => {
+          this.ephemeralChannel = response;
+        });
+      });
+    },
+
   }
 }
 </script>

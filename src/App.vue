@@ -16,7 +16,7 @@
       <user-card v-if="$store.state.authenticated" :userId="$store.state.self" :update="true"/>
     </div>
     <div class="tab-contents" v-if="$store.state.view === 'chatView'">
-      <chat :channelId="$store.state.users[$store.state.self].channels[1]"/>
+      <chat v-if="$store.state.currentChannel" :channelId="$store.state.currentChannel"/>
     </div>
 
 

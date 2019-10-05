@@ -14,6 +14,7 @@ export default new Vuex.Store({
     connected: false,
     authenticated: false,
     view: 'mainView',
+    currentChannel: null,
   },
   getters: {
     getSelf(state) {
@@ -33,14 +34,20 @@ export default new Vuex.Store({
       state.authenticated = isAuthenticated;
       console.log('mutation authenticated')
     },
+    setCurrentChannel(state, channelId) {
+      state.currentChannel = channelId;
+      console.log('mutation setCurrentChannel')
+    },
+    setJoinedChannels(state) {
+      // make it so it clears this before anything else
+      for (var index in state.users[state.self].channels) {
+        var channelId = state.users[state.self].channels[index];
+        Vue.set(state.joinedChannels, channelId, []);
+      }
+      console.log('mutation setJoinedChannels')
+    },
     setSelf(state, userId) {
       state.self = userId;
-      if (state.self) {
-        for (var index in state.users[state.self].channels) {
-          var channelId = state.users[state.self].channels[index];
-          Vue.set(state.joinedChannels, channelId, []);
-        }
-      }
       console.log('mutation setSelf');
     },
     setChannels(state, channels) {
@@ -97,10 +104,6 @@ export default new Vuex.Store({
   },
   actions: {
 
-    SOCKET_wewlad({commit, dispatch}) {
-      console.log('WEW LAD!');
-    },
-
     SOCKET_connect({commit, dispatch}) {
       console.log('action SOCKET_connect')
       commit('connected', true);
@@ -108,6 +111,33 @@ export default new Vuex.Store({
         console.log('socket.emit authenticate')
         this._vm.$socket.emit('authenticate', {token: localStorage.token});
       }
+    },
+
+    SOCKET_authSuccess({commit, dispatch, state}, user) {
+      console.log('action authSuccess');
+
+      commit('addUser', user);
+      commit('setSelf', user._id);
+      for (var channelIndex in user.channels) {
+        var channelId = user.channels[channelIndex];
+        this._vm.$socket.emit('getChannel', channelId, (response) => {
+          commit('addChannel', response);
+          for (var memberIndex in response.members) {
+            var memberId = response.members[memberIndex];
+            if (state.users[memberId]) {
+              // console.log('auth user already exists')
+            } else {
+              this._vm.$socket.emit('getUser', memberId, (response) => {
+                commit('addUser', response);
+              });
+            }
+          }
+        });
+      }
+      commit('setJoinedChannels');
+      commit('setCurrentChannel', state.users[state.self].channels[0]);
+      commit('authenticated', true);
+      console.log('action authSuccess: done')
     },
 
     SOCKET_addUser({commit, dispatch}, user) {
@@ -118,15 +148,6 @@ export default new Vuex.Store({
     SOCKET_addChannel({commit, dispatch}, channel) {
       console.log('action SOCKET_addChannel');
       commit('addChannel', channel);
-    },
-
-    SOCKET_addSelf({commit, dispatch, state}, selfId) {
-      console.log('action SOCKET_addSelf');
-      commit('authenticated', true);
-      commit('setSelf', selfId);
-      for (var index in state.users[selfId].channels) {
-        dispatch('getChannel', state.users[selfId].channels[index]);
-      }
     },
 
     SOCKET_newToken({commit, dispatch}, token) {
@@ -147,13 +168,7 @@ export default new Vuex.Store({
     login({commit, dispatch}, {username, password}) {
       console.log('action login')
       console.log('socket.emit login');
-      this._vm.$socket.emit('login', {username: username, password: password}, (response) => {
-        console.log('socket.emit login ack');
-        commit('authenticated', true);
-        commit('addUser', response.user);
-        commit('setSelf', response.user._id);
-        dispatch('SOCKET_newToken', response.token);
-      });
+      this._vm.$socket.emit('login', {username: username, password: password});
     },
 
     register({commit, dispatch}, {username, password, passwordVerify}) {
@@ -165,10 +180,10 @@ export default new Vuex.Store({
         };
         this._vm.$socket.emit('register', credentials, (response) => {
           console.log('socket.emit register ack');
-          commit('authenticated', true);
-          commit('addUser', response.user);
-          commit('setSelf', response.user._id);
-          dispatch('SOCKET_newToken', response.token);
+          // commit('authenticated', true);
+          // commit('addUser', response.user);
+          // commit('setSelf', response.user._id);
+          // dispatch('SOCKET_newToken', response.token);
         });
       }
     },
@@ -191,30 +206,43 @@ export default new Vuex.Store({
 
     getUser({commit, dispatch, state}, userId) {
       console.log('action getUser');
-      return new Promise((resolve, reject) => {
-        console.log('socket.emit getUser');
-        this._vm.$socket.emit('getUser', userId, (response) => {
-          commit('addUser', response);
-          resolve(state.users[userId]);
-        });
-      })
+      if (state.users[userId]) {
+        console.log('action getUser: already exists in store');
+        return state.users[userId];
+      } else {
+        console.log('action getUser: fetching from server');
+        return new Promise((resolve, reject) => {
+          console.log('socket.emit getUser');
+          this._vm.$socket.emit('getUser', userId, (response) => {
+            commit('addUser', response);
+            resolve(state.users[userId]);
+          });
+        })
+      }
     },
 
     getEphemeralUser({commit, dispatch, state}, userId) {
-      // console.log('action getEphemeralUser')
-      return new Promise((resolve, reject) => {
-        // if client is already subbed to a user (if user obj in store)
-        if (state.users[userId]) {
-          // console.log('getEphemeralUser served from state')
-          resolve(state.users[userId]);
-        } else {
-          // console.log('socket.emit getEphemeralUser');
-          this._vm.$socket.emit('getEphemeralUser', userId, (response) => {
-            // console.log('getEphemeralUser callback');
-            resolve(response);
-          });
-        }
-      });
+      console.log('action getEphemeralUser')
+      if (state.users[userId]) {
+        console.log('action getEphemeralUser: already exists in store');
+        return state.users[userId];
+      } else {
+        return new Promise((resolve, reject) => {
+          // if client is already subbed to a user (if user obj in store)
+          if (state.users[userId]) {
+            // console.log('getEphemeralUser served from state')
+            resolve(state.users[userId]);
+          } else {
+            console.log('action getUser: fetching from server');
+            console.log('socket.emit getEphemeralUser');
+            this._vm.$socket.emit('getEphemeralUser', userId, (response) => {
+              // console.log('getEphemeralUser callback');
+              resolve(response);
+            });
+          }
+        });
+      }
+
     },
 
     subChannel({commit, dispatch}, channelId) {
@@ -238,18 +266,19 @@ export default new Vuex.Store({
 
     getEphemeralChannel({commit, dispatch, state}, channelId) {
       console.log('action getEphemeralChannel');
-      return new Promise((resolve, reject) => {
-        if (state.channels[channelId]) {
-          console.log('getEphemeralChannel served from state');
-          resolve(state.channels[channelId]);
-        } else {
+      if (state.channels[channelId]) {
+        console.log('getEphemeralChannel served from state');
+        return state.channels[channelId];
+      } else {
+        return new Promise((resolve, reject) => {
           console.log('socket.emit getEphemeralChannel');
           this._vm.$socket.emit('getEphemeralChannel', channelId, (response) => {
             console.log('getEphemeralChannel callback');
             resolve(response);
           });
-        }
-      });
+        });
+      }
+
     },
 
     editSelf({commit, dispatch}, {avatar, handle}) {
